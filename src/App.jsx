@@ -9,6 +9,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [dataSource, setDataSource] = useState(null);
   const [selectedResort, setSelectedResort] = useState(null);
   const [filters, setFilters] = useState({
     type: 'all',
@@ -17,31 +18,32 @@ function App() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(async (isRefresh = false) => {
     const controller = new AbortController();
-
-    async function loadData() {
-      try {
-        setLoading(true);
-        const data = await fetchTurkeyResorts({ signal: controller.signal });
-        setResorts(data.resorts);
-        setLastUpdated(data.lastUpdated);
-        setError(null);
-      } catch (err) {
-        if (err.name === 'AbortError') return;
-        console.warn('Live fetch failed, using static data:', err.message);
-        const fallback = getStaticResorts();
-        setResorts(fallback.resorts);
-        setLastUpdated(fallback.lastUpdated);
-        setError('Canlı veri çekilemedi, statik veriler gösteriliyor.');
-      } finally {
-        setLoading(false);
-      }
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchTurkeyResorts({ signal: controller.signal });
+      setResorts(data.resorts);
+      setLastUpdated(data.lastUpdated);
+      setDataSource('live');
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.warn('Live fetch failed, using static data:', err.message);
+      const fallback = getStaticResorts();
+      setResorts(fallback.resorts);
+      setLastUpdated(fallback.lastUpdated);
+      setDataSource('static');
+      setError('Canlı veri çekilemedi, statik veriler gösteriliyor.');
+    } finally {
+      setLoading(false);
     }
-
-    loadData();
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const cities = useMemo(() => {
     const citySet = new Set();
@@ -96,7 +98,20 @@ function App() {
           <span className="stat">Resort: {stats.resorts}</span>
           <span className="stat">Otel: {stats.hotels}</span>
           {lastUpdated && <span className="stat date">Güncelleme: {lastUpdated}</span>}
+          {dataSource && (
+            <span className={`stat source ${dataSource}`}>
+              {dataSource === 'live' ? '🟢 Canlı' : '🟡 Statik'}
+            </span>
+          )}
         </div>
+        <button
+          className="refresh-btn"
+          onClick={() => loadData(true)}
+          disabled={loading}
+          title="Verileri yenile"
+        >
+          {loading ? '⟳' : '🔄'}
+        </button>
         <button
           className="sidebar-toggle"
           onClick={() => setSidebarOpen((v) => !v)}

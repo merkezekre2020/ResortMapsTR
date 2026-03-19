@@ -1,17 +1,20 @@
 import staticResorts from './resortsData.json';
 
-const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.openstreetmap.fr/api/interpreter',
+];
 
+// Türkiye bounding box: lat 36-42, lon 26-45
 const OVERPASS_QUERY = `
-[out:json][timeout:90];
-area["ISO3166-1"="TR"]->.turkey;
+[out:json][timeout:120];
 (
-  node["tourism"="resort"](area.turkey);
-  way["tourism"="resort"](area.turkey);
-  node["leisure"="resort"](area.turkey);
-  way["leisure"="resort"](area.turkey);
-  node["tourism"="hotel"](area.turkey);
-  way["tourism"="hotel"](area.turkey);
+  node["tourism"="resort"](36,26,42,45);
+  way["tourism"="resort"](36,26,42,45);
+  node["leisure"="resort"](36,26,42,45);
+  way["leisure"="resort"](36,26,42,45);
+  node["tourism"="hotel"](36,26,42,45);
+  way["tourism"="hotel"](36,26,42,45);
 );
 out center;
 `;
@@ -38,10 +41,15 @@ function extractCoordinates(element) {
   return null;
 }
 
+function isInTurkey(lat, lon) {
+  return lat >= 35.5 && lat <= 42.5 && lon >= 25.5 && lon <= 45;
+}
+
 function parseElement(element) {
   const tags = element.tags || {};
   const coords = extractCoordinates(element);
   if (!coords) return null;
+  if (!isInTurkey(coords.lat, coords.lon)) return null;
 
   const filteredTags = {};
   for (const key of PREFERRED_TAGS) {
@@ -67,29 +75,53 @@ function parseOverpassResponse(data) {
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 }
 
-export async function fetchTurkeyResorts({ signal } = {}) {
-  const params = new URLSearchParams({ data: OVERPASS_QUERY });
-
-  const response = await fetch(`${OVERPASS_ENDPOINT}?${params}`, {
-    method: 'GET',
+async function fetchFromEndpoint(endpoint, signal) {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'data=' + encodeURIComponent(OVERPASS_QUERY.trim()),
     signal,
   });
 
   if (!response.ok) {
-    throw new Error(`Overpass API request failed: ${response.status} ${response.statusText}`);
+    throw new Error(`${endpoint}: ${response.status} ${response.statusText}`);
   }
 
-  const data = await response.json();
-  const resorts = parseOverpassResponse(data);
+  const text = await response.text();
 
-  return {
-    resorts,
-    lastUpdated: new Date().toISOString().slice(0, 10),
-  };
+  // Bazı mirror'lar HTML hata döndürebilir
+  if (text.startsWith('<') || text.startsWith('This')) {
+    throw new Error(`${endpoint}: HTML error response`);
+  }
+
+  return JSON.parse(text);
+}
+
+export async function fetchTurkeyResorts({ signal } = {}) {
+  let lastError;
+
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const data = await fetchFromEndpoint(endpoint, signal);
+      const resorts = parseOverpassResponse(data);
+      if (resorts.length === 0) throw new Error('No data returned');
+      return {
+        resorts,
+        lastUpdated: new Date().toISOString().slice(0, 10),
+        source: 'live',
+      };
+    } catch (err) {
+      if (err.name === 'AbortError') throw err;
+      lastError = err;
+      console.warn(`Failed with ${endpoint}:`, err.message);
+    }
+  }
+
+  throw lastError || new Error('All endpoints failed');
 }
 
 export function getStaticResorts() {
-  return staticResorts;
+  return { ...staticResorts, source: 'static' };
 }
 
 export default fetchTurkeyResorts;
