@@ -1,0 +1,155 @@
+.map-container {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.leaflet-map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Custom Markers */
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.marker-pin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.marker-pin.resort {
+  background: #2563eb;
+  border: 3px solid #fff;
+}
+
+.marker-pin.hotel {
+  background: #059669;
+  border: 3px solid #fff;
+}
+
+.marker-pin.selected {
+  background: #dc2626;
+  border: 3px solid #fff;
+  width: 30px;
+  height: 30px;
+  animation: pulse-marker 1.5s infinite;
+}
+
+@keyframes pulse-marker {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }
+}
+
+/* Cluster Icons */
+.custom-cluster {
+  background: transparent !important;
+  border: none !important;
+}
+
+.cluster-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.cluster-icon.small {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.cluster-icon.medium {
+  width: 44px;
+  height: 44px;
+  font-size: 14px;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  box-shadow: 0 2px 10px rgba(139, 92, 246, 0.5);
+}
+
+.cluster-icon.large {
+  width: 52px;
+  height: 52px;
+  font-size: 15px;
+  background: linear-gradient(135deg, #a855f7, #9333ea);
+  box-shadow: 0 3px 12px rgba(168, 85, 247, 0.5);
+}
+
+/* Popup Styles */
+.resort-popup {
+  min-width: 180px;
+  padding: 4px 0;
+}
+
+.resort-popup h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.popup-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.popup-type.resort {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.popup-type.hotel {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.popup-type.guest_house {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.popup-city {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.popup-stars {
+  margin: 4px 0 0;
+  color: #f59e0b;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.popup-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.popup-link:hover {
+  text-decoration: underline;
+}
